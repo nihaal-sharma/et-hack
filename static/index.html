@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AI-Powered Industrial Safety Intelligence — Real-time compound risk detection and evacuation routing for industrial environments">
+    <title>SafetyAI — Industrial Safety Intelligence</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Leaflet.js -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <!-- ─── Top Navigation Bar ─── -->
+    <header id="top-bar">
+        <div class="logo-section">
+            <div class="logo-icon">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                    <path d="M14 2L2 8v12l12 6 12-6V8L14 2z" stroke="url(#logoGrad)" stroke-width="2" fill="none"/>
+                    <path d="M14 8l-6 3v6l6 3 6-3v-6l-6-3z" fill="url(#logoGrad)" opacity="0.3"/>
+                    <circle cx="14" cy="14" r="3" fill="url(#logoGrad)"/>
+                    <defs>
+                        <linearGradient id="logoGrad" x1="0" y1="0" x2="28" y2="28">
+                            <stop offset="0%" stop-color="#00f0ff"/>
+                            <stop offset="100%" stop-color="#7b61ff"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+            <div>
+                <h1 id="app-title">SafetyAI</h1>
+                <span class="subtitle">Industrial Safety Intelligence</span>
+            </div>
+        </div>
+        <div class="status-section">
+            <div class="status-badge" id="system-status">
+                <span class="pulse-dot"></span>
+                <span>SYSTEM ONLINE</span>
+            </div>
+            <div class="clock" id="live-clock"></div>
+        </div>
+    </header>
+
+    <!-- ─── Main Content ─── -->
+    <main id="dashboard">
+        <!-- Left Panel: Controls & Stats -->
+        <aside id="left-panel">
+            <!-- Risk Summary Card -->
+            <div class="glass-card" id="risk-summary-card">
+                <div class="card-header">
+                    <h2>⚡ Risk Overview</h2>
+                    <span class="badge" id="overall-risk-badge">NORMAL</span>
+                </div>
+                <div class="stat-grid">
+                    <div class="stat-item critical" id="stat-critical">
+                        <span class="stat-number">0</span>
+                        <span class="stat-label">Critical</span>
+                    </div>
+                    <div class="stat-item danger" id="stat-danger">
+                        <span class="stat-number">0</span>
+                        <span class="stat-label">Danger</span>
+                    </div>
+                    <div class="stat-item warning" id="stat-warning">
+                        <span class="stat-number">0</span>
+                        <span class="stat-label">Warning</span>
+                    </div>
+                    <div class="stat-item normal" id="stat-normal">
+                        <span class="stat-number">100</span>
+                        <span class="stat-label">Normal</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sensor Info Card -->
+            <div class="glass-card" id="sensor-info-card">
+                <div class="card-header">
+                    <h2>📡 Sensors</h2>
+                </div>
+                <div class="info-row">
+                    <span>Active Readings</span>
+                    <span class="info-value" id="active-readings">—</span>
+                </div>
+                <div class="info-row">
+                    <span>Active Permits</span>
+                    <span class="info-value" id="active-permits">—</span>
+                </div>
+                <div class="info-row">
+                    <span>Last Update</span>
+                    <span class="info-value" id="last-update">—</span>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="glass-card" id="controls-card">
+                <div class="card-header">
+                    <h2>🎛️ Controls</h2>
+                </div>
+                <button class="btn btn-primary" id="btn-evaluate-risk" onclick="triggerRiskEvaluation()">
+                    <span class="btn-icon">🔍</span>
+                    Evaluate Risk
+                </button>
+                <button class="btn btn-secondary" id="btn-find-route" onclick="findEvacuationRoute()">
+                    <span class="btn-icon">🚨</span>
+                    Find Evacuation Route
+                </button>
+                <div class="route-inputs" id="route-inputs">
+                    <label>Start Position</label>
+                    <div class="input-row">
+                        <input type="number" id="start-x" min="0" max="9" value="5" placeholder="X">
+                        <input type="number" id="start-y" min="0" max="9" value="5" placeholder="Y">
+                    </div>
+                </div>
+                <button class="btn btn-ghost" id="btn-toggle-polling" onclick="togglePolling()">
+                    <span class="btn-icon">⏸️</span>
+                    <span id="polling-label">Pause Live Updates</span>
+                </button>
+            </div>
+
+            <!-- Evacuation Info -->
+            <div class="glass-card hidden" id="evacuation-card">
+                <div class="card-header">
+                    <h2>🚪 Evacuation Route</h2>
+                </div>
+                <div class="info-row">
+                    <span>Algorithm</span>
+                    <span class="info-value" id="route-algorithm">—</span>
+                </div>
+                <div class="info-row">
+                    <span>Distance</span>
+                    <span class="info-value" id="route-distance">—</span>
+                </div>
+                <div class="info-row">
+                    <span>Steps</span>
+                    <span class="info-value" id="route-steps">—</span>
+                </div>
+                <div class="info-row">
+                    <span>Exit Node</span>
+                    <span class="info-value" id="route-exit">—</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Center: Map View -->
+        <section id="map-container">
+            <div id="factory-map"></div>
+            <div class="map-legend">
+                <span class="legend-item"><span class="dot dot-normal"></span> Normal</span>
+                <span class="legend-item"><span class="dot dot-warning"></span> Warning</span>
+                <span class="legend-item"><span class="dot dot-danger"></span> Danger</span>
+                <span class="legend-item"><span class="dot dot-critical"></span> Critical</span>
+                <span class="legend-item"><span class="dot dot-exit"></span> Exit</span>
+                <span class="legend-item"><span class="line-sample"></span> Evacuation Route</span>
+            </div>
+        </section>
+
+        <!-- Right Panel: Alerts Feed -->
+        <aside id="right-panel">
+            <div class="glass-card" id="alerts-card">
+                <div class="card-header">
+                    <h2>🔔 Risk Alerts</h2>
+                    <button class="btn-icon-small" onclick="clearAlerts()" title="Clear Alerts">✕</button>
+                </div>
+                <div id="alerts-feed">
+                    <div class="alert-item info">
+                        <span class="alert-time">--:--:--</span>
+                        <span class="alert-msg">System initialized. Waiting for sensor data...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Compound Risk Details -->
+            <div class="glass-card hidden" id="compound-risk-card">
+                <div class="card-header">
+                    <h2>⚠️ Compound Risks</h2>
+                </div>
+                <div id="compound-risks-list"></div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- App Script -->
+    <script src="/static/app.js"></script>
+</body>
+</html>

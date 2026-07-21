@@ -1,0 +1,11 @@
+# Core
+fastapi==0.115.0
+uvicorn[standard]==0.30.0
+networkx==3.3
+
+# AI / ML (optional — system works without these)
+crewai==0.80.0
+langchain-google-genai==2.0.0
+
+# Database
+# sqlite3 is included in Python stdlib
